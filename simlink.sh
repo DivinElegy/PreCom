@@ -2,14 +2,32 @@
 
 songs_dir=/home/cameron/Games/OpenITG/Songs
 symlink_dir=/home/cameron/Games/OpenITG/Songs/Fast
+current_file=
 
 IFS=$'\n'
 
-function maxbpm()
+#(file, key)
+function extract_key()
 {
-	bpms=$(grep "BPMS" $1)
-	bpms=${bpms:6:-2}
+	key=$(grep $2 $1 | cut -d ':' -f 2 | cut -d ';' -f 1 | tr -d $'\r')
+	echo "$key"
+}
 
+function song_length_minutes()
+{
+	path=$1
+	music_file=$(extract_key $1 "MUSIC")
+	music_path=${path%/*}
+
+	length=$(ffmpeg -i "$music_path/$music_file" 2>&1 | grep Duration |awk '{print $2}' | cut -d ':' -f 2 | tr -d ,)
+	length=${length##0}
+
+	echo "$length"
+}
+
+function max_bpm()
+{
+	bpms=$(extract_key $1 "BPMS")
 	IFS=',' read -a array <<< "$bpms"
 
 	max300=0.00
@@ -45,8 +63,10 @@ function difficulty()
 for file in $(find "$songs_dir" -name *.sm)
 do
 	difficulty=$(difficulty $file)
-	maxbpm=$(maxbpm $file)
+	maxbpm=$(max_bpm $file)
+	songlength=$(song_length_minutes $file)
 
 	echo "$maxbpm"
 	echo "$difficulty"
+	echo "$songlength"
 done
