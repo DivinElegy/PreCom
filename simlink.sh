@@ -1,8 +1,11 @@
+#TITLE: Organise Simfiles
+#PARENT: ITG Options
+#WIDGET: progress_bar
+
 #!/bin/bash
 
 songs_dir=/home/cameron/Games/OpenITG/Songs
 symlink_dir=/home/cameron/Games/OpenITG/Songs/Fast
-current_file=
 
 IFS=$'\n'
 
