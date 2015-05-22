@@ -1,0 +1,26 @@
+{
+  "MainMenu": {
+    "type": "menu",
+    "description": "PreCom Options",
+    "items": {
+      "Services": {
+        "type": "menu",
+        "description": "Start/Stop services",
+        "items": {
+          "ITG": {
+            "type": "service",
+            "description": "Start/Stop the ITG service",
+            "command": "/home/cameron/OpenITG/itg",
+            "user": "itg"
+          },
+          "gEdit": {
+            "type": "service",
+            "description": "Start/Stop the gEdit service",
+            "command": "gedit",
+            "user": "itg"
+          }
+        }
+      }
+    }
+  }
+}
