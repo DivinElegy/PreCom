@@ -1,5 +1,16 @@
 #!/bin/bash
 
+INPUT=/tmp/menu.sh.$$
+OUTPUT=/tmp/output.sh.$$
+
+trap "rm $OUTPUT' rm $INPUT; exit" SIGHUP SIGINT SIGTERM
+
+menu_json="$(./JSON.sh -l < menu.json)"
+current_item="MainMenu"
+backtitle="DivinElegy PreCom"
+box_width=50
+box_height=15
+
 #Pass something like MainMenu.type and it'll
 #give the value
 #this should be the full path to the item
@@ -9,7 +20,7 @@ function get_key()
 {
 	value_re="[[:space:]]+\"(.+)\"$"
 	while read -r line; do
-		[[ $line == "$1"* ]] && [[ $line =~ $value_re ]] &&  echo ${BASH_REMATCH[1]} && break
+		[[ $line == ${1}* ]] && [[ $line =~ $value_re ]] &&  echo ${BASH_REMATCH[1]} && break
 	done <<< "$menu_json"
 }
 
@@ -44,6 +55,13 @@ function get_item_description()
         get_key "$full_path.description"
 }
 
+#(dot-delim, key)
+function get_item_key()
+{
+	full_path=$(short_path_to_full_path $1)
+	get_key "$full_path.$2"
+}
+
 #Returns true if line is a child
 #of the dot-delim menu passed in
 #(line, dot-delim)
@@ -51,11 +69,11 @@ function get_item_description()
 #this will exclude grandchildren etc
 function is_child_of()
 {
-	full_path=$(short_path_to_full_path $2)
-	items_in_path=$(grep -o "items" <<< "$full_path" | wc -l)
-	items_in_line=$(grep -o "items" <<< "$1" | wc -l)
+	full_path=$(short_path_to_full_path "$2")
+	items_in_path=$(grep -o items <<< "$full_path" | wc -l)
+	items_in_line=$(grep -o items <<< "$1" | wc -l)
 
-	if [[ "$1" == "$full_path"* ]] && [[ $((items_in_path + 1)) == "$items_in_line"  ]]; then
+	if [[ $1 == ${full_path}* ]] && [[ $((items_in_path + 1)) == $items_in_line  ]]; then
 		return 0
 	else
 		return 1
@@ -71,6 +89,8 @@ function render_menu()
 {
 	options=()
 	while read -r line; do
+		#Cracks the shits without the quotes on the args,
+		#I don't know why.
 		if is_child_of "$line" "$1"; then
 			name_re="items.([a-zA-Z]+).description"
 			desc_re=".description[[:space:]]\"(.+)\""
@@ -84,39 +104,64 @@ function render_menu()
 		options+=("Back" "Go back")
 	fi
 
-	dialog --clear --backtitle "DivinElegy PreCom" --title "${1//./>}" --menu "$(get_item_description $1)" 15 50 4 "${options[@]}" 2>"${INPUT}"
+	#Also cracks the shits without quotes.
+	#Also don't know why.
+	dialog --clear --backtitle "$backtitle" --title "${1//./>}" --menu "$(get_item_description $1)" "$box_height" "$box_width" 4 "${options[@]}" 2>"${INPUT}"
 }
 
-function render_item()
+function toggle_service()
+{
+	service_command=$(get_item_key $1 command)
+	service_name=$(basename $service_command)
+
+	#If the quotes aren't here then the application launches
+	#Not sure why
+	pid="$(pgrep $service_name)"
+
+	if [[ $pid ]]; then
+		dialog --clear --backtitle "$backtitle" --title "Disable $service_name" --yesno "This will stop $service_name. Are you sure?" 6 50
+		[[ $? == 0 ]] && kill -9 $pid
+	else
+		dialog --clear --backtitle "$backtitle" --title "Enable $service_name" --yesno "This will start $service_name. Are you sure?" 6 50
+		[[ $? == 0 ]] && $service_command > /dev/null 2>&1 &
+	fi
+
+	#Kind of a hack? When we get here current_item will be:
+	#thing.otherThing.this_service
+	#but after we leave here we want to render thing.otherThing
+	#so returning Back gets the main loop to do that.
+	echo "Back" > "${INPUT}"
+}
+
+function process_item()
 {
 	type=$(get_item_type $1)
 	case $type in
 		menu) render_menu $1;;
+		service) toggle_service $1;;
 	esac
 }
 
-####################
-
-INPUT=/tmp/menu.sh.$$
-OUTPUT=/tmp/output.sh.$$
-
-trap "rm $OUTPUT' rm $INPUT; exit" SIGHUP SIGINT SIGTERM
-
-menu_json="$(./JSON.sh -l < menu.json)"
-current_item="MainMenu"
+#############
+# Main loop #
+############
 
 while true; do
-	render_item $current_item
-	selection=$(<"${INPUT}")
+        process_item $current_item
+	#todo: Is it possible to avoid using a file for this?
+        selection=$(<"${INPUT}")
 
-	case $selection in
-		Quit) break;;
-		Back) current_item="${current_item%.*}";;
-		*) current_item="$current_item.$selection";;
-	esac
+        case $selection in
+                Quit) break;;
+                Back) current_item="${current_item%.*}";;
+                *) current_item="$current_item.$selection";;
+        esac
 done
 
-#clear
+###########
+# Cleanup #
+###########
+clear
 
 [ -f $OUTPUT ] && rm $OUTPUT
 [ -f $INPUT ] && rm $INPUT
