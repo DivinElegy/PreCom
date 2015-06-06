@@ -20,6 +20,19 @@
             "user": "itg"
           }
         }
+      },
+      "Tasks": {
+        "type": "menu",
+        "description": "Run tasks",
+        "items": {
+          "UpdateSongs": {
+            "type": "task",
+            "description": "Check for updates to ITG song list",
+            "widget": "gauge",
+            "command": "./rsync-adapter.sh -ia --delete --exclude 'A is for Cool Shit' /mnt/linkstation/Music/SkyHill /home/cameron/rsync-adapter-test",
+            "user": "itg"
+          }
+        }
       }
     }
   }

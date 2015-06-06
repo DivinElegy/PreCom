@@ -133,12 +133,23 @@ function toggle_service()
 	echo "Back" > "${INPUT}"
 }
 
+function run_task()
+{
+	task_command=$(get_item_key $1 command)
+	task_widget=$(get_item_key $1 widget)
+
+	$task_command | dialog --clear --backtitle "$backtitle" --title "Running $1" --gauge "Processing..." 6 50
+
+        echo "Back" > "${INPUT}"
+}
+
 function process_item()
 {
 	type=$(get_item_type $1)
 	case $type in
 		menu) render_menu $1;;
 		service) toggle_service $1;;
+		task) run_task $1;;
 	esac
 }
 
