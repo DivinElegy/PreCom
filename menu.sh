@@ -11,11 +11,13 @@ backtitle="DivinElegy PreCom"
 box_width=50
 box_height=15
 
+function debug()
+{
+	>&2 echo "$1"
+}
+
 #Pass something like MainMenu.type and it'll
 #give the value
-#this should be the full path to the item
-#this function is not intended for use in
-#the main logic of the menu
 function get_key()
 {
 	value_re="[[:space:]]+\"(.+)\"$"
@@ -67,18 +69,27 @@ function get_item_key()
 #(line, dot-delim)
 #note: child means _direct_ child
 #this will exclude grandchildren etc
-function is_child_of()
+function is_item_of_menu()
 {
 	full_path=$(short_path_to_full_path "$2")
-	items_in_path=$(grep -o items <<< "$full_path" | wc -l)
-	items_in_line=$(grep -o items <<< "$1" | wc -l)
 
-	if [[ $1 == ${full_path}* ]] && [[ $((items_in_path + 1)) == $items_in_line  ]]; then
+        items_in_path=$(grep -o items <<< "$full_path" | wc -l)
+        items_in_line=$(grep -o items <<< "$1" | wc -l)
+
+        if [[ $1 == ${full_path}* ]] && [[ $((items_in_path + 1)) == $items_in_line ]]; then
+                return 0
+        else
+                return 1
+        fi
+}
+
+function is_child_of()
+{
+	if [[ $1 == ${2}* ]]; then
 		return 0
 	else
 		return 1
 	fi
-
 }
 
 #Use a dot delimited path to the menu
@@ -91,7 +102,9 @@ function render_menu()
 	while read -r line; do
 		#Cracks the shits without the quotes on the args,
 		#I don't know why.
-		if is_child_of "$line" "$1"; then
+		#Yes I do, it's because $line has a tab followed by text in it.
+		#Without the quotes it thinks what follows the tab is the second arg
+		if is_item_of_menu "$line" "$1"; then
 			name_re="items.([a-zA-Z]+).description"
 			desc_re=".description[[:space:]]\"(.+)\""
 			[[ $line =~ $name_re ]] && name=${BASH_REMATCH[1]} && [[ $line =~ $desc_re ]] && desc=${BASH_REMATCH[1]} && options+=("$name" "$desc")
@@ -118,7 +131,7 @@ function toggle_service()
 	#Not sure why
 	pid="$(pgrep $service_name)"
 
-	if [[ $pid ]]; then
+ 	if [[ $pid ]]; then
 		dialog --clear --backtitle "$backtitle" --title "Disable $service_name" --yesno "This will stop $service_name. Are you sure?" 6 50
 		[[ $? == 0 ]] && kill -9 $pid
 	else
@@ -135,10 +148,16 @@ function toggle_service()
 
 function run_task()
 {
-	task_command=$(get_item_key $1 command)
-	task_widget=$(get_item_key $1 widget)
-
-	$task_command | dialog --clear --backtitle "$backtitle" --title "Running $1" --gauge "Processing..." 6 50
+	#I tried $(short_path_to_full_path $1).commands
+	#but it produced a weird result.
+	full_path=$(short_path_to_full_path $1)
+	while read -r line; do
+        	if is_child_of "$line" "${full_path}.commands"; then
+			debug "$(get_key $line)"
+			#logic to read the commands to work out widgets etc
+			#$task_command | dialog --clear --backtitle "$backtitle" --title "Running $1" --gauge "Processing..." 6 50
+                fi
+        done <<< "$menu_json"
 
         echo "Back" > "${INPUT}"
 }

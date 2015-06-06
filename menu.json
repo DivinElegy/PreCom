@@ -27,9 +27,12 @@
         "items": {
           "UpdateSongs": {
             "type": "task",
-            "description": "Check for updates to ITG song list",
-            "widget": "gauge",
-            "command": "./rsync-adapter.sh -ia --delete --exclude 'A is for Cool Shit' /mnt/linkstation/Music/SkyHill /home/cameron/rsync-adapter-test",
+            "description": "Update the ITG song list",
+            "commands": [
+		"./rsync-adapter.sh -ia --delete --exclude 'A is for Cool Shit' /mnt/linkstation/Music/SkyHill /home/cameron/rsync-adapter-test",
+		"another command",
+		"and another"
+	    ],
             "user": "itg"
           }
         }
