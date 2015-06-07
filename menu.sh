@@ -16,9 +16,19 @@ function debug()
 	>&2 echo "$1"
 }
 
+function get_key_from_line()
+{
+	key_re="(.+?)[[:space:]]+\""
+	while read -r line; do
+		[[ "$1" =~ $key_re ]] && echo ${BASH_REMATCH[1]} && break
+	done <<< "$menu_json"
+}
+
 #Pass something like MainMenu.type and it'll
 #give the value
-function get_key()
+#nice bonus: If passed a full line from menu_json
+#this will return the value for it
+function get_value_from_key()
 {
 	value_re="[[:space:]]+\"(.+)\"$"
 	while read -r line; do
@@ -48,20 +58,20 @@ function short_path_to_full_path()
 function get_item_type()
 {
 	full_path=$(short_path_to_full_path $1)
-	get_key "$full_path.type"
+	get_value_from_key "$full_path.type"
 }
 
 function get_item_description()
 {
         full_path=$(short_path_to_full_path $1)
-        get_key "$full_path.description"
+        get_value_from_key "$full_path.description"
 }
 
 #(dot-delim, key)
 function get_item_key()
 {
 	full_path=$(short_path_to_full_path $1)
-	get_key "$full_path.$2"
+	get_value_from_key "$full_path.$2"
 }
 
 #Returns true if line is a child
@@ -90,6 +100,16 @@ function is_child_of()
 	else
 		return 1
 	fi
+}
+
+#file, #detail
+function get_adapter_detail()
+{
+        value_re="# ${2}:[[:space:]]+(.+)$"
+
+        while read -r line; do
+                [[ $line =~ $value_re ]] &&  echo ${BASH_REMATCH[1]} && break
+        done < "$1"
 }
 
 #Use a dot delimited path to the menu
@@ -153,10 +173,26 @@ function run_task()
 	full_path=$(short_path_to_full_path $1)
 	while read -r line; do
         	if is_child_of "$line" "${full_path}.commands"; then
-			debug "$(get_key $line)"
-			#logic to read the commands to work out widgets etc
-			#$task_command | dialog --clear --backtitle "$backtitle" --title "Running $1" --gauge "Processing..." 6 50
+			command_re=".\/(.+.sh)"
+			if [[ $line =~ $command_re ]]; then
+				widget=$(get_adapter_detail "${BASH_REMATCH[1]}" "widget")
+				key=$(get_key_from_line "$line")
+				command="$(get_value_from_key $key)"
+				title=$(get_value_from_key "${key%.*}.title")
+
+				#todo: check exit status and display an error message if one
+				#command fails (and break the loop)
+				case "$widget" in
+					gauge) eval "$command" | dialog --clear --backtitle "$backtitle" --title "Running $1" --gauge "$title" 6 50;;
+				esac
+			fi
                 fi
+
+		#todo: Figure out a nice way to display a success message that can be customised
+		#for example after updating the songlist it would be nice for it to say how many
+		#song were updated
+		#
+		#Perhaps the easiest way is just to add another task (i.e., write another script) to do that?
         done <<< "$menu_json"
 
         echo "Back" > "${INPUT}"

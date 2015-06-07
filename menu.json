@@ -29,9 +29,14 @@
             "type": "task",
             "description": "Update the ITG song list",
             "commands": [
-		"./rsync-adapter.sh -ia --delete --exclude 'A is for Cool Shit' /mnt/linkstation/Music/SkyHill /home/cameron/rsync-adapter-test",
-		"another command",
-		"and another"
+		{
+			"command": "./rsync-adapter.sh -ia --delete --exclude 'A is for Cool Shit' /mnt/linkstation/Test/Songs /mnt/linkstation/Test/itg",
+			"title": "Syncing songs..."
+		},
+		{
+			"command": "./cache-update-adapter.sh -d /mnt/linkstation/Test/itg/Cache/Songs/",
+			"title": "Updating cache..."
+		}
 	    ],
             "user": "itg"
           }
