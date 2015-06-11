@@ -34,7 +34,7 @@
 			"title": "Syncing songs..."
 		},
 		{
-			"command": "./cache-update-adapter.sh -d /home/cameron/Games/OpenITG/Cache/Songs/",
+			"command": "./cache-update-adapter.sh -d /itg/Cache/Songs/",
 			"title": "Updating cache..."
 		},
 		{
