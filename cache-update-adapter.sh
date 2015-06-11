@@ -25,6 +25,8 @@ if [[ -z "$cache_dir" ]] || [[ "${cache_dir}xxx" = "xxx" ]]; then
 	exit 1
 fi
 
+[[ ! -d "$cache_dir" ]] && echo 100 && exit 0
+
 num=$(wc -l < /tmp/newsongs.txt)
 num_processed=0
 

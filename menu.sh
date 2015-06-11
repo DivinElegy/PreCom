@@ -8,8 +8,8 @@ trap "rm $OUTPUT' rm $INPUT; exit" SIGHUP SIGINT SIGTERM
 menu_json="$(./JSON.sh -l < menu.json)"
 current_item="MainMenu"
 backtitle="DivinElegy PreCom"
-box_width=50
-box_height=15
+box_width=70
+box_height=30
 
 function debug()
 {
@@ -139,7 +139,7 @@ function render_menu()
 
 	#Also cracks the shits without quotes.
 	#Also don't know why.
-	dialog --clear --backtitle "$backtitle" --title "${1//./>}" --menu "$(get_item_description $1)" "$box_height" "$box_width" 4 "${options[@]}" 2>"${INPUT}"
+	dialog --clear --backtitle "$backtitle" --title "${1//./>}" --nocancel --menu "$(get_item_description $1)" "$box_height" "$box_width" 4 "${options[@]}" 2>"${INPUT}"
 }
 
 function toggle_service()
@@ -181,8 +181,8 @@ function run_task()
 				title=$(get_value_from_key "${key%.*}.title")
 
 				case "$widget" in
-					gauge) eval "$command" | dialog --clear --backtitle "$backtitle" --title "Running $1" --gauge "$title" 6 50;;
-					msgbox) eval "$command" | dialog --clear --backtitle "$backtitle" --title "Running $1" --msgbox "$title" 6 50;;
+					gauge) eval "$command" | dialog --clear --backtitle "$backtitle" --title "Running $1" --gauge "$title" "$box_height" "$box_width";;
+					msgbox) eval "$command" | dialog --clear --backtitle "$backtitle" --title "$title" --msgbox "$(eval \"$command\")" "$box_height" "$box_width";;
 				esac
 			fi
                 fi

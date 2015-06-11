@@ -10,7 +10,7 @@
           "ITG": {
             "type": "service",
             "description": "Start/Stop the ITG service",
-            "command": "/home/cameron/OpenITG/itg",
+            "command": "/home/cameron/Games/OpenITG/openitg-beta-2",
             "user": "itg"
           },
           "gEdit": {
@@ -30,11 +30,11 @@
             "description": "Update the ITG song list",
             "commands": [
 		{
-			"command": "./rsync-adapter.sh -ia --delete --exclude 'A is for Cool Shit' /mnt/linkstation/Test/Songs /mnt/linkstation/Test/itg",
+			"command": "./rsync-adapter.sh -ia --delete --exclude 'A is for Cool Shit' /home/cameron/PreComTestRepo/Songs /home/cameron/Games/OpenITG",
 			"title": "Syncing songs..."
 		},
 		{
-			"command": "./cache-update-adapter.sh -d /mnt/linkstation/Test/itg/Cache/Songs/",
+			"command": "./cache-update-adapter.sh -d /home/cameron/Games/OpenITG/Cache/Songs/",
 			"title": "Updating cache..."
 		},
 		{
@@ -45,6 +45,20 @@
             "user": "itg"
           }
         }
+      },
+      "Presets": {
+	 "type": "menu",
+	 "description": "Run presets",
+	 "items": {
+	     "SyncAndLaunch": {
+		"type": "preset",
+		"description": "Sync songs and launch ITG",
+		"itemsToRun": [
+			"Tasks.UpdateSongs",
+			"Services.ITG"
+		]
+	     }
+	  }
       }
     }
   }
