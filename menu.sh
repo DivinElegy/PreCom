@@ -180,19 +180,12 @@ function run_task()
 				command="$(get_value_from_key $key)"
 				title=$(get_value_from_key "${key%.*}.title")
 
-				#todo: check exit status and display an error message if one
-				#command fails (and break the loop)
 				case "$widget" in
 					gauge) eval "$command" | dialog --clear --backtitle "$backtitle" --title "Running $1" --gauge "$title" 6 50;;
+					msgbox) eval "$command" | dialog --clear --backtitle "$backtitle" --title "Running $1" --msgbox "$title" 6 50;;
 				esac
 			fi
                 fi
-
-		#todo: Figure out a nice way to display a success message that can be customised
-		#for example after updating the songlist it would be nice for it to say how many
-		#song were updated
-		#
-		#Perhaps the easiest way is just to add another task (i.e., write another script) to do that?
         done <<< "$menu_json"
 
         echo "Back" > "${INPUT}"

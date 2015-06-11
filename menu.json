@@ -36,6 +36,10 @@
 		{
 			"command": "./cache-update-adapter.sh -d /mnt/linkstation/Test/itg/Cache/Songs/",
 			"title": "Updating cache..."
+		},
+		{
+			"command": "./cache-update-confirmation-adapter.sh",
+			"title": "Songs updated"
 		}
 	    ],
             "user": "itg"
