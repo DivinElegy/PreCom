@@ -170,7 +170,7 @@ function run_task()
 {
 	#I tried $(short_path_to_full_path $1).commands
 	#but it produced a weird result.
-	full_path=$(short_path_to_full_path $1)
+	local full_path=$(short_path_to_full_path $1)
 	while read -r line; do
         	if is_child_of "$line" "${full_path}.commands"; then
 			command_re=".\/(.+.sh)"
@@ -185,23 +185,40 @@ function run_task()
 					msgbox) eval "$command" | dialog --clear --backtitle "$backtitle" --title "$title" --msgbox "$(eval \"$command\")" "$box_height" "$box_width";;
 				esac
 			fi
-                fi
+               fi
         done <<< "$menu_json"
 
-        echo "Back" > "${INPUT}"
+	echo "Back" > "${INPUT}"
+}
+
+function run_preset()
+{
+        local full_path=$(short_path_to_full_path $1)
+        while read -r line; do
+                if is_child_of "$line" "${full_path}.itemsToRun"; then
+			key=$(get_key_from_line "$line")
+			item=$(get_value_from_key "$key")
+			debug "$item"
+			sleep 3
+			process_item "$item"
+		fi
+	done <<< "$menu_json"
+
+	echo "Back" > "${INPUT}"
 }
 
 function process_item()
 {
 	type=$(get_item_type $1)
 	case $type in
-		menu) render_menu $1;;
-		service) toggle_service $1;;
-		task) run_task $1;;
+		menu) render_menu $1 $2;;
+		service) toggle_service $1 $2;;
+		task) run_task $1 $2;;
+		preset) run_preset $1 $2;;
 	esac
 }
 
-#############
+############# 
 # Main loop #
 ############
 

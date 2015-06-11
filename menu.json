@@ -54,8 +54,8 @@
 		"type": "preset",
 		"description": "Sync songs and launch ITG",
 		"itemsToRun": [
-			"Tasks.UpdateSongs",
-			"Services.ITG"
+			"MainMenu.Tasks.UpdateSongs",
+			"MainMenu.Services.ITG"
 		]
 	     }
 	  }
