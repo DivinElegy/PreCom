@@ -3,7 +3,7 @@
 INPUT=/tmp/menu.sh.$$
 OUTPUT=/tmp/output.sh.$$
 
-trap "rm $OUTPUT' rm $INPUT; exit" SIGHUP SIGINT SIGTERM
+trap "rm $OUTPUT; rm $INPUT; exit" SIGHUP SIGINT SIGTERM
 
 menu_json="$(./JSON.sh -l < menu.json)"
 current_item="MainMenu"
@@ -36,13 +36,55 @@ function get_value_from_key()
 	done <<< "$menu_json"
 }
 
-#simply puts item between each element
-#in the path. So Menu.Services.ITG
-#become Menu.items.Services.items.ITG
+#Helper for short_path_to_full_path
+#Given a menu item name, and a path to
+#its parent (a real JSON path like MainMenu.items.0)
+#this will return the path to the item from the given path
+#For example if it is passed MainMenu.items.0 and "ITG" it might
+#return: items.0
+#name, path
+function get_relative_child_path()
+{
+	if [[ -z "$2" ]]; then
+		echo "$1"
+	else
+		re="${2//./\\.}\.items\.([0-9]+?)\.name"
+		debug "$re"
+		while read -r line; do
+			if [[ "$line" =~ $re ]]; then
+				sub_path=${BASH_REMATCH[1]}
+				key=$(get_key_from_line "$line")
+				value=$(get_value_from_key "$key")
+				[[ "$value" == "$1" ]] && echo "items.$sub_path"
+			fi
+		done <<< "$menu_json"
+	fi
+}
+
+#When talking about menus it's useful to
+#be able to say something like:
+#MainMenu.Service.ITG instead of
+#MainMenu.items.0.items.0
+#This function converts the nice path
+#to the real JSON path.
 function short_path_to_full_path()
 {
-	echo "${1//./.items.}"
+	path_so_far=""
+	while IFS='.' read -ra parts; do
+		for i in "${parts[@]}"; do
+			relative_path=$(get_relative_child_path "$i" "$path_so_far")
+
+			if [[ -z "$path_so_far" ]]; then
+				path_so_far="${relative_path}"
+			else
+				path_so_far="${path_so_far}.${relative_path}"
+			fi
+		done
+	done <<< "$1"
+
+	echo "$path_so_far"
 }
+
 
 #Functions below here are for convenience.
 #They allow extraction of information about
@@ -125,9 +167,15 @@ function render_menu()
 		#Yes I do, it's because $line has a tab followed by text in it.
 		#Without the quotes it thinks what follows the tab is the second arg
 		if is_item_of_menu "$line" "$1"; then
-			name_re="items.([a-zA-Z]+).description"
-			desc_re=".description[[:space:]]\"(.+)\""
-			[[ $line =~ $name_re ]] && name=${BASH_REMATCH[1]} && [[ $line =~ $desc_re ]] && desc=${BASH_REMATCH[1]} && options+=("$name" "$desc")
+			name_re=".name[[:space:]].+?\"(.+)\""
+			desc_re=".description[[:space:]].+?\"(.+)\""
+			
+			#todo: the issue here is that the name and description are on different line things now (before it was the same)
+			#probably have to scrap this loop and extract the name and desc using one of my helper function things
+			#see run_task where I use magic to go back a level (so like from thing.thing2.thing3 -> thing.thing2 and tack on
+			#the extra bit I wanna extract
+			[[ $line =~ $name_re ]] && debug "hello" && name=${BASH_REMATCH[1]} && [[ $line =~ $desc_re ]] && desc=${BASH_REMATCH[1]} && debug "${name} ${desc}" && options+=("$name" "$desc")
+sleep 1
 		fi
 	done <<< "$menu_json"
 
@@ -239,5 +287,5 @@ done
 ###########
 clear
 
-[ -f $OUTPUT ] && rm $OUTPUT
-[ -f $INPUT ] && rm $INPUT
+[[ -f $OUTPUT ]] && rm $OUTPUT
+[[ -f $INPUT ]] && rm $INPUT
