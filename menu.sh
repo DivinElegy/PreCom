@@ -167,15 +167,15 @@ function render_menu()
 		#Yes I do, it's because $line has a tab followed by text in it.
 		#Without the quotes it thinks what follows the tab is the second arg
 		if is_item_of_menu "$line" "$1"; then
+			#Match on name as it is unique per item
+			#Multiple lines will match per item without this
 			name_re=".name[[:space:]].+?\"(.+)\""
-			desc_re=".description[[:space:]].+?\"(.+)\""
-			
-			#todo: the issue here is that the name and description are on different line things now (before it was the same)
-			#probably have to scrap this loop and extract the name and desc using one of my helper function things
-			#see run_task where I use magic to go back a level (so like from thing.thing2.thing3 -> thing.thing2 and tack on
-			#the extra bit I wanna extract
-			[[ $line =~ $name_re ]] && debug "hello" && name=${BASH_REMATCH[1]} && [[ $line =~ $desc_re ]] && desc=${BASH_REMATCH[1]} && debug "${name} ${desc}" && options+=("$name" "$desc")
-sleep 1
+			if [[ $line =~ $name_re ]]; then
+				key=$(get_key_from_line "$line")
+				desc=$(get_value_from_key "${key%.*}.description")
+				name=$(get_value_from_key "${key%.*}.name")
+				options+=("$name" "$desc")
+			fi
 		fi
 	done <<< "$menu_json"
 
