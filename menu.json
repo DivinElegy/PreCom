@@ -37,6 +37,10 @@
                 "command": "./rsync-adapter.sh -ia --delete --exclude 'A is for Cool Shit' /home/cameron/PreComTestRepo/Songs /home/cameron/Games/OpenITG",
                 "title": "Syncing songs..."
             },
+	    {
+		"command": "./simlink-adapter.sh -d /home/cameron/Games/OpenITG/Songs/ -f 240 -s 5 -r 13",
+		"title": "Sorting songs..."
+	    },
             {
                 "command": "./cache-update-adapter.sh -d /itg/Cache/Songs/",
                 "title": "Updating cache..."
@@ -54,7 +58,7 @@
         "description": "Run presets",
         "items": [
         {
-            "name": "Sync and Launch",
+            "name": "Sync_and_Launch",
             "type": "preset",
             "description": "Sync songs and launch ITG",
             "itemsToRun": [

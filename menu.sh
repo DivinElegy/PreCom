@@ -14,6 +14,7 @@ box_height=30
 function debug()
 {
 	>&2 echo "$1"
+	sleep 2
 }
 
 function get_key_from_line()
@@ -49,7 +50,6 @@ function get_relative_child_path()
 		echo "$1"
 	else
 		re="${2//./\\.}\.items\.([0-9]+?)\.name"
-		debug "$re"
 		while read -r line; do
 			if [[ "$line" =~ $re ]]; then
 				sub_path=${BASH_REMATCH[1]}
@@ -80,7 +80,7 @@ function short_path_to_full_path()
 				path_so_far="${path_so_far}.${relative_path}"
 			fi
 		done
-	done <<< "$1"
+	done <<< "${1//_/\ }"
 
 	echo "$path_so_far"
 }
@@ -174,7 +174,7 @@ function render_menu()
 				key=$(get_key_from_line "$line")
 				desc=$(get_value_from_key "${key%.*}.description")
 				name=$(get_value_from_key "${key%.*}.name")
-				options+=("$name" "$desc")
+				options+=("${name//_/\ }" "$desc")
 			fi
 		fi
 	done <<< "$menu_json"
@@ -219,6 +219,7 @@ function run_task()
 	#I tried $(short_path_to_full_path $1).commands
 	#but it produced a weird result.
 	local full_path=$(short_path_to_full_path $1)
+
 	while read -r line; do
         	if is_child_of "$line" "${full_path}.commands"; then
 			command_re=".\/(.+.sh)"
@@ -229,8 +230,8 @@ function run_task()
 				title=$(get_value_from_key "${key%.*}.title")
 
 				case "$widget" in
-					gauge) eval "$command" | dialog --clear --backtitle "$backtitle" --title "Running $1" --gauge "$title" "$box_height" "$box_width";;
-					msgbox) eval "$command" | dialog --clear --backtitle "$backtitle" --title "$title" --msgbox "$(eval \"$command\")" "$box_height" "$box_width";;
+					gauge) eval "$command" | dialog --clear --backtitle "$backtitle" --title "Running $1" --gauge "$title" 6 60;;
+					msgbox) eval "$command" | dialog --clear --backtitle "$backtitle" --title "$title" --msgbox "$(eval \"$command\")" 8 40;;
 				esac
 			fi
                fi
@@ -246,8 +247,6 @@ function run_preset()
                 if is_child_of "$line" "${full_path}.itemsToRun"; then
 			key=$(get_key_from_line "$line")
 			item=$(get_value_from_key "$key")
-			debug "$item"
-			sleep 3
 			process_item "$item"
 		fi
 	done <<< "$menu_json"
@@ -258,6 +257,7 @@ function run_preset()
 function process_item()
 {
 	type=$(get_item_type $1)
+
 	case $type in
 		menu) render_menu $1 $2;;
 		service) toggle_service $1 $2;;
@@ -278,7 +278,7 @@ while true; do
         case $selection in
                 Quit) break;;
                 Back) current_item="${current_item%.*}";;
-                *) current_item="$current_item.$selection";;
+                *) current_item="$current_item.${selection//\ /_}";;
         esac
 done
 
