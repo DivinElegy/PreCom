@@ -1,5 +1,9 @@
 #!/bin/bash
 
+#TODO: There are probably instances where I should be quoting variables but am not.
+#Basically, if there is any chance that an argument will have a space in it, it should
+#be quoted when used.
+
 INPUT=/tmp/menu.sh.$$
 OUTPUT=/tmp/output.sh.$$
 
