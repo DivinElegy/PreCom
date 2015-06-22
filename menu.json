@@ -58,7 +58,7 @@
         "description": "Run presets",
         "items": [
         {
-            "name": "Sync_and_Launch",
+            "name": "Sync and Launch",
             "type": "preset",
             "description": "Sync songs and launch ITG",
             "itemsToRun": [

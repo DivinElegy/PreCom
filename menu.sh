@@ -80,7 +80,7 @@ function short_path_to_full_path()
 				path_so_far="${path_so_far}.${relative_path}"
 			fi
 		done
-	done <<< "${1//_/\ }"
+	done <<< "$1"
 
 	echo "$path_so_far"
 }
@@ -99,13 +99,13 @@ function short_path_to_full_path()
 #	service
 function get_item_type()
 {
-	full_path=$(short_path_to_full_path $1)
+	full_path=$(short_path_to_full_path "$1")
 	get_value_from_key "$full_path.type"
 }
 
 function get_item_description()
 {
-        full_path=$(short_path_to_full_path $1)
+        full_path=$(short_path_to_full_path "$1")
         get_value_from_key "$full_path.description"
 }
 
@@ -174,7 +174,7 @@ function render_menu()
 				key=$(get_key_from_line "$line")
 				desc=$(get_value_from_key "${key%.*}.description")
 				name=$(get_value_from_key "${key%.*}.name")
-				options+=("${name//_/\ }" "$desc")
+				options+=("$name" "$desc")
 			fi
 		fi
 	done <<< "$menu_json"
@@ -218,7 +218,7 @@ function run_task()
 {
 	#I tried $(short_path_to_full_path $1).commands
 	#but it produced a weird result.
-	local full_path=$(short_path_to_full_path $1)
+	local full_path=$(short_path_to_full_path "$1")
 
 	while read -r line; do
         	if is_child_of "$line" "${full_path}.commands"; then
@@ -256,13 +256,13 @@ function run_preset()
 
 function process_item()
 {
-	type=$(get_item_type $1)
+	type=$(get_item_type "$1")
 
 	case $type in
-		menu) render_menu $1 $2;;
-		service) toggle_service $1 $2;;
-		task) run_task $1 $2;;
-		preset) run_preset $1 $2;;
+		menu) render_menu "$1" "$2";;
+		service) toggle_service "$1" "$2";;
+		task) run_task "$1" "$2";;
+		preset) run_preset "$1" "$2";;
 	esac
 }
 
@@ -271,14 +271,14 @@ function process_item()
 ############
 
 while true; do
-        process_item $current_item
+        process_item "$current_item"
 	#todo: Is it possible to avoid using a file for this?
         selection=$(<"${INPUT}")
 
         case $selection in
                 Quit) break;;
                 Back) current_item="${current_item%.*}";;
-                *) current_item="$current_item.${selection//\ /_}";;
+                *) current_item="$current_item.$selection";;
         esac
 done
 
