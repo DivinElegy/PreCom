@@ -21,6 +21,13 @@
             "description": "Start/Stop the gEdit service",
             "command": "gedit",
             "user": "itg"
+        },
+        {
+          "name":"xterm",
+            "type": "service",
+            "description": "Start/Stop the xterm service",
+            "command": "xterm",
+            "user": "itg"
         }]
     },
     { 
@@ -62,8 +69,8 @@
             "type": "preset",
             "description": "Sync songs and launch ITG",
             "itemsToRun": [
-              "MainMenu.Tasks.UpdateSongs",
-              "MainMenu.Services.ITG"
+              "MainMenu.Tasks.Update songs",
+              "MainMenu.Services.xterm"
             ]
         }]
     }]

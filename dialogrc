@@ -1,0 +1,4 @@
+
+bindkey * \w ITEM_PREV
+bindkey * \e ITEM_NEXT
+bindkey * \r ENTER

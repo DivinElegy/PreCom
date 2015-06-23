@@ -14,6 +14,23 @@ current_item="MainMenu"
 backtitle="DivinElegy PreCom"
 box_width=70
 box_height=30
+dialog_bin="/usr/bin/dialog"
+
+while getopts ":d:" opt; do
+  case $opt in
+    d)
+      dialog_bin=$OPTARG
+      ;;
+    \?)
+      echo "Invalid option: -$OPTARG" >&2
+      exit 1
+      ;;
+    :)
+      echo "Option -$OPTARG requires an argument." >&2
+      exit 1
+      ;;
+  esac
+done
 
 function debug()
 {
@@ -191,7 +208,7 @@ function render_menu()
 
 	#Also cracks the shits without quotes.
 	#Also don't know why.
-	dialog --clear --backtitle "$backtitle" --title "${1//./>}" --nocancel --menu "$(get_item_description $1)" "$box_height" "$box_width" 4 "${options[@]}" 2>"${INPUT}"
+	$dialog_bin --clear --backtitle "$backtitle" --title "${1//./>}" --nocancel --menu "$(get_item_description $1)" "$box_height" "$box_width" 4 "${options[@]}" 2>"${INPUT}"
 }
 
 function toggle_service()
@@ -203,12 +220,21 @@ function toggle_service()
 	#Not sure why
 	pid="$(pgrep $service_name)"
 
+	#XXX: Eww. Too many ifs. Clean this?
  	if [[ $pid ]]; then
-		dialog --clear --backtitle "$backtitle" --title "Disable $service_name" --yesno "This will stop $service_name. Are you sure?" 6 50
-		[[ $? == 0 ]] && kill -9 $pid
+		if [[ "$2" != "skip_confirmation_dialogs" ]]; then
+			kill -9 $pid
+		else
+			$dialog_bin --clear --backtitle "$backtitle" --title "Disable $service_name" --yesno "This will stop $service_name. Are you sure?" 6 50
+			[[ $? == 0 ]] && kill -9 $pid
+		fi
 	else
-		dialog --clear --backtitle "$backtitle" --title "Enable $service_name" --yesno "This will start $service_name. Are you sure?" 6 50
-		[[ $? == 0 ]] && $service_command > /dev/null 2>&1 &
+		if [[ "$2" == "skip_confirmation_dialogs" ]]; then
+			$service_command > /dev/null 2>&1 &
+		else
+			$dialog_bin --clear --backtitle "$backtitle" --title "Enable $service_name" --yesno "This will start $service_name. Are you sure?" 6 50
+			[[ $? == 0 ]] && $service_command > /dev/null 2>&1 &
+		fi
 	fi
 
 	#Kind of a hack? When we get here current_item will be:
@@ -234,8 +260,8 @@ function run_task()
 				title=$(get_value_from_key "${key%.*}.title")
 
 				case "$widget" in
-					gauge) eval "$command" | dialog --clear --backtitle "$backtitle" --title "Running $1" --gauge "$title" 6 60;;
-					msgbox) eval "$command" | dialog --clear --backtitle "$backtitle" --title "$title" --msgbox "$(eval \"$command\")" 8 40;;
+					gauge) eval "$command" | $dialog_bin --clear --backtitle "$backtitle" --title "Running $1" --gauge "$title" 6 60;;
+					msgbox) [[ $2 != "skip_confirmation_dialogs" ]] && eval "$command" | $dialog_bin --clear --backtitle "$backtitle" --title "$title" --msgbox "$(eval \"$command\")" 8 40;;
 				esac
 			fi
                fi
@@ -246,12 +272,12 @@ function run_task()
 
 function run_preset()
 {
-        local full_path=$(short_path_to_full_path $1)
+        local full_path=$(short_path_to_full_path "$1")
         while read -r line; do
                 if is_child_of "$line" "${full_path}.itemsToRun"; then
 			key=$(get_key_from_line "$line")
 			item=$(get_value_from_key "$key")
-			process_item "$item"
+			process_item "$item" "skip_confirmation_dialogs"
 		fi
 	done <<< "$menu_json"
 
@@ -261,7 +287,6 @@ function run_preset()
 function process_item()
 {
 	type=$(get_item_type "$1")
-
 	case $type in
 		menu) render_menu "$1" "$2";;
 		service) toggle_service "$1" "$2";;
