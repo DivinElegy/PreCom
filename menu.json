@@ -19,14 +19,14 @@
           "name":"gEdit",
             "type": "service",
             "description": "Start/Stop the gEdit service",
-            "command": "gedit",
+            "command": "/usr/bin/gedit",
             "user": "itg"
         },
         {
           "name":"xterm",
             "type": "service",
             "description": "Start/Stop the xterm service",
-            "command": "xterm",
+            "command": "/usr/bin/xterm",
             "user": "itg"
         }]
     },

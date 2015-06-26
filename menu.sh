@@ -7,7 +7,10 @@
 INPUT=/tmp/menu.sh.$$
 OUTPUT=/tmp/output.sh.$$
 
-trap "rm $OUTPUT; rm $INPUT; exit" SIGHUP SIGINT SIGTERM
+touch $INPUT
+touch $OUTPUT
+
+trap "rm $OUTPUT; rm $INPUT; rm /run/precom-*; exit" SIGHUP SIGINT SIGTERM
 
 menu_json="$(./JSON.sh -l < menu.json)"
 current_item="MainMenu"
@@ -133,7 +136,7 @@ function get_item_description()
 #(dot-delim, key)
 function get_item_key()
 {
-	full_path=$(short_path_to_full_path $1)
+	full_path=$(short_path_to_full_path "$1")
 	get_value_from_key "$full_path.$2"
 }
 
@@ -215,26 +218,25 @@ function toggle_service()
 {
 	service_command=$(get_item_key $1 command)
 	service_name=$(basename $service_command)
+	nice_service_name=$(echo $service_name | tr '[:upper:]' '[:lower:]')
+	local user=$(get_item_key $1 user)
+	confirm=0
 
 	#If the quotes aren't here then the application launches
 	#Not sure why
 	pid="$(pgrep $service_name)"
 
-	#XXX: Eww. Too many ifs. Clean this?
- 	if [[ $pid ]]; then
-		if [[ "$2" != "skip_confirmation_dialogs" ]]; then
-			kill -9 $pid
-		else
-			$dialog_bin --clear --backtitle "$backtitle" --title "Disable $service_name" --yesno "This will stop $service_name. Are you sure?" 6 50
-			[[ $? == 0 ]] && kill -9 $pid
-		fi
-	else
-		if [[ "$2" == "skip_confirmation_dialogs" ]]; then
-			$service_command > /dev/null 2>&1 &
-		else
-			$dialog_bin --clear --backtitle "$backtitle" --title "Enable $service_name" --yesno "This will start $service_name. Are you sure?" 6 50
-			[[ $? == 0 ]] && $service_command > /dev/null 2>&1 &
-		fi
+ 	[[ $pid ]] && start_stop="stop" || start_stop="start"
+ 	[[ $pid ]] && enable_disable="Disable" || enable_disable="Enable"
+
+	if [[ "$2" != "skip_confirmation_dialogs" ]]; then
+		$dialog_bin --clear --backtitle "$backtitle" --title "${enable_disable} ${service_name}" --yesno "This will ${start_stop} ${service_name}. Are you sure?" 6 50
+		confirm=$?
+	fi
+
+	if [[ $confirm == 0 ]]; then
+		start-stop-daemon --start --user "$user" --name "$nice_service_name" --chuid "$user" --background --pidfile "/var/run/precom-${nice_service_name}.pid" --make-pidfile --startas $service_command > /dev/null
+		[[ $? == 1 ]] && start-stop-daemon --stop --user "$user" --name "$nice_service_name" --pidfile "/var/run/precom-${nice_service_name}.pid"
 	fi
 
 	#Kind of a hack? When we get here current_item will be:
@@ -249,6 +251,7 @@ function run_task()
 	#I tried $(short_path_to_full_path $1).commands
 	#but it produced a weird result.
 	local full_path=$(short_path_to_full_path "$1")
+	local user=$(get_item_key "${1}" user)
 
 	while read -r line; do
         	if is_child_of "$line" "${full_path}.commands"; then
@@ -260,8 +263,8 @@ function run_task()
 				title=$(get_value_from_key "${key%.*}.title")
 
 				case "$widget" in
-					gauge) eval "$command" | $dialog_bin --clear --backtitle "$backtitle" --title "Running $1" --gauge "$title" 6 60;;
-					msgbox) [[ $2 != "skip_confirmation_dialogs" ]] && eval "$command" | $dialog_bin --clear --backtitle "$backtitle" --title "$title" --msgbox "$(eval \"$command\")" 8 40;;
+					gauge) su $user -c "$command" | $dialog_bin --clear --backtitle "$backtitle" --title "Running $1" --gauge "$title" 6 60;;
+					msgbox) [[ $2 != "skip_confirmation_dialogs" ]] && su $user -c "$command" | $dialog_bin --clear --backtitle "$backtitle" --title "$title" --msgbox "$(eval \"$command\")" 8 40;;
 				esac
 			fi
                fi
