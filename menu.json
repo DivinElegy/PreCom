@@ -3,91 +3,95 @@
     "type": "menu",
     "description": "PreCom Options",
     "items": [
-    {
+      {
         "name": "Services",
         "type": "menu",
         "description": "Start/Stop services",
         "items": [
-        {
+          {
             "name": "ITG",
             "type": "service",
             "description": "Start/Stop the ITG service",
             "command": "/itg/de-itg",
             "user": "itg"
-        },
-	{
-	    "name": "Steam",
-	    "type": "service",
-	    "description": "Start/Stop the Steam service",
-	    "command": "/itg/PreCom/steam.sh",
-	    "user": "steam"
-	},
-	{
-	    "name": "Steam TenFoot",
-	    "type": "service",
-	    "description": "Start/Stop the Steam service in tenfoot mode",
-	    "command": "/itg/PreCom/steam.sh",
-	    "args": "-t",
-	    "user": "steam"
-	},
-	{
-	    "name": "Stream",
-	    "type": "service",
-	    "description": "Start/Stop the stream service",
-	    "command": "/itg/PreCom/stream.sh",
-	    "user": "itg"
-	}]
-    },
-    { 
+          },
+          {
+            "name": "Steam",
+            "type": "service",
+            "description": "Start/Stop the Steam service",
+            "command": "/itg/PreCom/steam.sh",
+            "user": "steam"
+          },
+          {
+            "name": "Steam TenFoot",
+            "type": "service",
+            "description": "Start/Stop the Steam service in tenfoot mode",
+            "command": "/itg/PreCom/steam.sh",
+            "args": "-t",
+            "user": "steam"
+          },
+          {
+            "name": "Stream",
+            "type": "service",
+            "description": "Start/Stop the stream service",
+            "command": "/itg/PreCom/stream.sh",
+            "user": "itg"
+          }
+        ]
+      },
+      {
         "name": "Tasks",
         "type": "menu",
         "description": "Run tasks",
         "items": [
-        {
+          {
             "name": "Update songs",
             "type": "task",
             "description": "Update the ITG song list",
             "commands": [
-            {
+              {
                 "command": "./rsync-adapter.sh -ia --delete --exclude 'A is for Cool Shit' --exclude 'Footspeed' --exclude 'Stamina' /mnt/shares/itg-repo/Songs /itg",
                 "title": "Syncing songs..."
-            },
-	    {
-		"command": "./simlink-adapter.sh -d /itg/Songs/ -f 240 -s 5 -r 13",
-		"title": "Sorting songs..."
-	    },
-            {
+              },
+              {
+                "command": "./simlink-adapter.sh -d /itg/Songs/ -f 240 -s 5 -r 13",
+                "title": "Sorting songs..."
+              },
+              {
                 "command": "./cache-update-adapter.sh -d /itg/Cache/Songs/",
                 "title": "Updating cache..."
-            },
-            {
+              },
+              {
                 "command": "./cache-update-confirmation-adapter.sh",
                 "title": "Songs updated"
-            }],
+              }
+            ],
             "user": "itg"
-        },
-	{
-	    "name": "DivinElegy Twitch",
-	    "type": "task",
-	    "description": "Sets up the camera and launches OBS",
-	    "commands": [
-	    {
-		"command": "./camflush-adapter.sh",
-		"title": "Flush camera"
-	    },
-	    {
-		"command": "ssh peekingboo@...",
-		"title": "Starting obs"
-	    }],
-	    "user": "itg"
-	}]
-    },
-    {
+          },
+          {
+            "name": "DivinElegy Twitch",
+            "type": "task",
+            "description": "Sets up the camera and launches OBS",
+            "commands": [
+              {
+                "command": "./camflush-adapter.sh",
+                "title": "Flush camera"
+              },
+              {
+                "command": "ssh peekingboo@...",
+                "title": "Starting obs"
+              }
+            ],
+            "user": "itg"
+          }
+        ]
+      },
+      {
         "name": "Presets",
         "type": "menu",
         "description": "Run presets",
         "items": [
-        {
+          {
             "name": "Sync and Launch",
             "type": "preset",
             "description": "Sync songs and launch ITG",
@@ -95,16 +99,18 @@
               "MainMenu.Tasks.Update songs",
               "MainMenu.Services.ITG"
             ]
-        },
-	{
-	    "name": "GameStomp",
-	    "type": "preset",
-	    "description": "Do shit for GameStomp",
-	    "itemsToRun": [
-	      "MainMenu.Services.Steam",
-	      "MainMenu.tasks.Divinelegy Twitch"
-	    ]
-	}]
-    }]
+          },
+          {
+            "name": "GameStomp",
+            "type": "preset",
+            "description": "Do shit for GameStomp",
+            "itemsToRun": [
+              "MainMenu.tasks.Divinelegy Twitch",
+              "MainMenu.Services.Steam"
+            ]
+          }
+        ]
+      }
+    ]
   }
 }
