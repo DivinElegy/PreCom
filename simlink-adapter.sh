@@ -117,6 +117,9 @@ function difficulty()
 	echo "$max300"
 }
 
+rm -rf "${songs_dir}/Footspeed"
+rm -rf "${songs_dir}/Stamina"
+
 mkdir -p "${songs_dir}/Footspeed"
 mkdir -p "${songs_dir}/Stamina"
 
@@ -137,6 +140,5 @@ do
 	fi
 
         ((num_processed++))
-
         printf '%i %i' $num_processed $total_charts | mawk -Winteractive '{ pc=100*$1/$2; i=int(pc); print (pc-i<0.5)?i:i+1 }'
 done

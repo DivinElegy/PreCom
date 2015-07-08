@@ -1,2 +1,5 @@
-bitrate=dank
-swage=memes
+framerate=60
+device=C615
+video_offset=0.5
+video_bitrate=5000k
+audio_bitrate=44100

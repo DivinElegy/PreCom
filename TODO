@@ -1,0 +1,5 @@
+Streaming to peekingboo etc is a TASK not a service,
+
+remove the psexec stuff from stream.sh to a new script that just calls psexec (might not even need a script, just do it as the task)
+
+Need some way of adding delays between commands for presets 

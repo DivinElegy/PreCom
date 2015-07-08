@@ -3,21 +3,22 @@
 #TODO: There are probably instances where I should be quoting variables but am not.
 #Basically, if there is any chance that an argument will have a space in it, it should
 #be quoted when used.
-
+export DIALOGRC=/itg/PreCom/dialogrc
+export DISPLAY=:0.0
 INPUT=/tmp/menu.sh.$$
 OUTPUT=/tmp/output.sh.$$
 
 touch $INPUT
 touch $OUTPUT
 
-trap "rm $OUTPUT; rm $INPUT; rm /run/precom-*; exit" SIGHUP SIGINT SIGTERM
+trap "rm $OUTPUT; rm $INPUT; rm /run/precom-*; service xorg stop; exit" SIGHUP SIGINT SIGTERM
 
 menu_json="$(./JSON.sh -l < menu.json)"
 current_item="MainMenu"
 backtitle="DivinElegy PreCom"
 box_width=70
 box_height=30
-dialog_bin="/usr/bin/dialog"
+dialog_bin="/itg/PreCom/dialog"
 
 while getopts ":d:" opt; do
   case $opt in
@@ -216,12 +217,13 @@ function render_menu()
 
 function toggle_service()
 {
-	service_command=$(get_item_key $1 command)
-	service_name=$(basename $service_command)
+	service_command=$(get_item_key "$1" command)
+	service_command_array=($service_command)
+	service_name=$(basename ${service_command_array[0]})
+	service_args=$(get_item_key "$1" args)
 	nice_service_name=$(echo $service_name | tr '[:upper:]' '[:lower:]')
-	local user=$(get_item_key $1 user)
+	local user=$(get_item_key "$1" user)
 	confirm=0
-
 	#If the quotes aren't here then the application launches
 	#Not sure why
 	pid="$(pgrep $service_name)"
@@ -235,8 +237,18 @@ function toggle_service()
 	fi
 
 	if [[ $confirm == 0 ]]; then
-		start-stop-daemon --start --user "$user" --name "$nice_service_name" --chuid "$user" --background --pidfile "/var/run/precom-${nice_service_name}.pid" --make-pidfile --startas $service_command > /dev/null
-		[[ $? == 1 ]] && start-stop-daemon --stop --user "$user" --name "$nice_service_name" --pidfile "/var/run/precom-${nice_service_name}.pid"
+#        debug "start-stop-daemon --start --user \"$user\" --name \"$nice_service_name\" --chuid \"$user\" --background --pidfile \"/var/run/precom-${nice_service_name}.pid\" --make-pidfile --startas \"$service_command\" -- \"$service_args\""  #> /dev/null
+		start-stop-daemon --start --user "$user" --name "$nice_service_name" --chuid "$user" --background --pidfile "/var/run/precom-${nice_service_name}.pid" --make-pidfile --startas "$service_command" -- $service_args #> /dev/null
+		if [[ $? == 1 ]]; then
+			#XXX: If we start a script with start-stop-daemon and it spawns child processes, start-stop-daemon doesn't kill them
+			#pkill kills the child processes and then start-stop-daemon stops the daemon
+			#probably bash scripts should kill their own children when they receive the kill signal but I can't work out how
+			#to do that.
+			pid=$(cat /var/run/precom-${nice_service_name}.pid)
+			pkill -TERM -P "$pid"
+			start-stop-daemon --stop --user "$user" --name "$nice_service_name" --pidfile "/var/run/precom-${nice_service_name}.pid"
+			rm "/var/run/precom-${nice_service_name}.pid"
+		fi
 	fi
 
 	#Kind of a hack? When we get here current_item will be:
@@ -321,3 +333,5 @@ clear
 
 [[ -f $OUTPUT ]] && rm $OUTPUT
 [[ -f $INPUT ]] && rm $INPUT
+
+service xorg stop

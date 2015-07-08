@@ -1,4 +1,4 @@
 
-bindkey * \w ITEM_PREV
-bindkey * \e ITEM_NEXT
-bindkey * \r ENTER
+bindkey * \y ITEM_PREV
+bindkey * \u ITEM_NEXT
+bindkey * \d ENTER
